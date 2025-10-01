@@ -1,9 +1,13 @@
 # main.py
+import asyncio
 from fastapi import FastAPI, Form, Request
 from twilio.twiml.messaging_response import MessagingResponse
 import os
 from twilio.rest import Client
 from dotenv import load_dotenv
+from services.calendar_service import list_calendar_events
+from fastapi.responses import PlainTextResponse
+
 
 load_dotenv()
 
@@ -32,22 +36,39 @@ async def whatsapp_webhook(
     From: str = Form(...)
 ):
 
-    incoming_msg = Body
+    incoming_msg = Body.lower()
     sender = From  # será algo como "whatsapp:+57300..."
 
     print(f"Recibido de {sender}: {incoming_msg}")
 
     # Puedes decidir si responder vía TwiML o enviar proactivamente
     resp = MessagingResponse()
-    resp.message("Estoy procesando tu mensaje...")
 
-    # Luego, como ejemplo, envía otro mensaje personalizado
-    sid = send_whatsapp_message(
-        sender, f"Hola de parte de TurnoAI, recibí: {incoming_msg}")
+    if "eventos" in incoming_msg:
+        events = await list_calendar_events(
+            '2025-09-25T00:00:00-05:00',
+            '2025-10-10T00:00:00-05:00'
+        )
 
-    print("Mensaje enviado con SID:", sid)
+        print("DEBUG - events:", events)
 
-    return str(resp)
+        if events and hasattr(events, "content") and events.content:
+            texto_eventos = events.content[0].text
+            send_whatsapp_message(
+                sender, f"Tus próximos eventos:\n{texto_eventos}")
+
+        else:
+            send_whatsapp_message(
+                sender, f"No encontré eventos en tu calendario.")
+
+    elif "saludo" in incoming_msg:
+        send_whatsapp_message(sender, "¡Hola! Soy TurnoAI 😊")
+    else:
+        send_whatsapp_message(sender,
+                              "No entendí tu mensaje. Escribe 'eventos' para ver tu calendario.")
+
+    # Twilio espera un string XML (TwiML)
+    return PlainTextResponse(str(resp), media_type="application/xml")
 
 
 # Endpoint de prueba
