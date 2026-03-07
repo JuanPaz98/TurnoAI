@@ -1,5 +1,5 @@
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 import httpx
 import traceback
 import os
@@ -12,46 +12,64 @@ MCP_SERVER_URL = os.getenv("CALENDAR_MCP_SERVER_URL")
 TIMEOUT_CONFIG = httpx.Timeout(30.0, connect=5.0)
 
 
-async def crear_cita_en_calendario(cita: any) -> dict | None:
-    """
-    Se conecta al servidor MCP remoto y llama a la herramienta 'create-event'.
-    """
+async def crear_cita_en_calendario(cita: any):
     try:
-        # 1. Establecer la conexión usando el transporte HTTP
-        async with streamablehttp_client(MCP_SERVER_URL, client_options={'timeout': TIMEOUT_CONFIG}) as (read_stream, write_stream, _):
+        async with streamable_http_client(MCP_SERVER_URL) as (read_stream, write_stream, _):
 
-            # 2. Iniciar una sesión de cliente MCP sobre esa conexión
             async with ClientSession(read_stream, write_stream) as session:
 
                 await session.initialize()
 
+                # Detectar formato de fechas - manejo flexible
+                if "fecha_inicio" in cita and "fecha_fin" in cita:
+                    # Formato: ISO datetime strings (2026-03-08T15:00:00)
+                    start = cita["fecha_inicio"]
+                    end = cita["fecha_fin"]
+                elif "fecha" in cita and "hora_inicio" in cita:
+                    # Formato: fecha separada + horas
+                    start = f'{cita["fecha"]}T{cita["hora_inicio"]}:00'
+                    end = f'{cita["fecha"]}T{cita["hora_fin"]}:00'
+                else:
+                    raise ValueError(
+                        "Formato de fechas no reconocido. Debe incluir fecha_inicio/fecha_fin o fecha/hora_inicio/hora_fin")
+
+                attendees = []
+                if "invitados" in cita:
+                    attendees = [{"email": email}
+                                 for email in cita["invitados"]]
+
+                # Agregar calendarId (requerido por MCP)
                 argumentos = {
-                    "summary": cita.titulo,
-                    "start": cita.inicio,
-                    "end": cita.fin,
-                    "attendees": [str(email) for email in cita.asistentes]
+                    "calendarId": "primary",  # ← IMPORTANTE: Agregado
+                    "summary": cita["titulo"],
+                    "start": start,
+                    "end": end,
+                    "attendees": attendees
                 }
 
-                # 3. Llamar a la herramienta remota
-                resultado = await session.call_tool("create-event", arguments=argumentos)
+                print("DEBUG - argumentos enviados al MCP:", argumentos)
 
-                # 4. Procesar el resultado...
+                resultado = await session.call_tool(
+                    "create-event",
+                    arguments=argumentos
+                )
+
                 if resultado.isError:
-                    return None
+                    raise Exception("Error creando evento")
 
-                return resultado.structuredContent
-
-    except httpx.TimeoutException as e:
-        # Es buena práctica capturar el error de timeout específicamente
-        print(
-            f"ERROR: La conexión con el servidor MCP excedió el tiempo de espera (timeout): {e}")
-        return None
+                return {
+                    "status": "✅ *Cita agendada con éxito*",
+                    "mensaje": f" 📅 '{cita['titulo']}' creado exitosamente para {start}",
+                    "detalles": {
+                        "titulo": cita["titulo"],
+                        "inicio": start,
+                        "fin": end
+                    }
+                }
 
     except Exception as e:
-        # Captura cualquier otro error
-        print(f"Error crítico al conectar o llamar al servidor MCP: {e}")
-        traceback.print_exc()
-        return None
+        print("ERROR calendario:", e)
+        raise e
 
 # --- Función para listar eventos del calendario a través de MCP ---
 
@@ -68,7 +86,7 @@ async def list_calendar_events(fecha_inicio: str, fecha_fin: str) -> list | None
     """
     try:
         # 1. Conexión con el servidor usando el transporte HTTP
-        async with streamablehttp_client(MCP_SERVER_URL) as (read_stream, write_stream, _):
+        async with streamable_http_client(MCP_SERVER_URL) as (read_stream, write_stream, _):
 
             # 2. Iniciar sesión de cliente MCP
             async with ClientSession(read_stream, write_stream) as session:
