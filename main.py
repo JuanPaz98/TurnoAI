@@ -1,11 +1,9 @@
 # main.py
-import asyncio
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form
 from twilio.twiml.messaging_response import MessagingResponse
 import os
 from twilio.rest import Client
 from dotenv import load_dotenv
-from services.calendar_service import list_calendar_events
 from fastapi.responses import PlainTextResponse
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
@@ -17,8 +15,18 @@ load_dotenv()
 # Variable global para mantener el ejecutor del agente
 agent_executor = None
 
+# Detectar si usar Twilio fake o real
+USE_TWILIO_FAKE = os.getenv("USE_TWILIO_FAKE", "False").lower() == "true"
+
 account_sid = os.getenv("TWILIO_ACCOUNT_SID")
 auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+
+# Inicializar Twilio solo si no es fake
+if not USE_TWILIO_FAKE:
+    twilio_client = Client(account_sid, auth_token)
+else:
+    twilio_client = None
+    print("⚠️  Modo TWILIO FAKE habilitado - No se enviarán mensajes reales")
 
 
 @asynccontextmanager
@@ -39,10 +47,16 @@ class AgentQuery(BaseModel):
     thread_id: str  # Para mantener la memoria de la conversación
 
 
-twilio_client = Client(account_sid, auth_token)
+def send_whatsapp_message_fake(to: str, body: str):
+    """Simula envío de WhatsApp sin usar Twilio (para testing)"""
+    print(f"\n📱 [FAKE TWILIO] Mensaje a {to}:")
+    print(f"   {body}")
+    print()
+    return "fake-message-id-123"
 
 
-def send_whatsapp_message(to: str, body: str):
+def send_whatsapp_message_real(to: str, body: str):
+    """Envía mensaje real por Twilio"""
     from_whatsapp = os.getenv("TWILIO_WHATSAPP_NUMBER")
     message = twilio_client.messages.create(
         body=body,
@@ -50,6 +64,14 @@ def send_whatsapp_message(to: str, body: str):
         to=to
     )
     return message.sid
+
+
+def send_whatsapp_message(to: str, body: str):
+    """Envía mensaje por WhatsApp (real o fake según configuración)"""
+    if USE_TWILIO_FAKE:
+        return send_whatsapp_message_fake(to, body)
+    else:
+        return send_whatsapp_message_real(to, body)
 
 
 # Endpoint para recibir mensajes de WhatsApp
