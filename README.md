@@ -69,8 +69,6 @@ sequenceDiagram
     Twilio->>User: "✅ Cita agendada para mañana a las 3pm"
 ```
 
-![alt text](diagrama-flujo.png)
-
 ## 🚀 Inicio Rápido
 
 ### Requisitos Previos
