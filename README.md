@@ -155,7 +155,7 @@ Para recibir mensajes de WhatsApp, debes configurar el webhook en Twilio:
    ```
    https://tu-dominio.com/webhook
    ```
-   (En desarrollo local, usa ngrok: `https://tu-ngrok-id.ngrok.io/webhook`)
+   (En desarrollo local, usa Cloudflare Tunnel: `https://tu-turnoai.cfargotunnel.com/webhook`)
 
 ## 🧪 Desarrollo Local
 
@@ -188,23 +188,23 @@ Los mensajes se simularán en la consola.
    USE_TWILIO_FAKE=false
    ```
 
-3. Expone tu servidor local con ngrok:
+3. Expone tu servidor local con Cloudflare Tunnel:
 
 ```bash
-ngrok http 8000
-# Copia la URL https de ngrok
+cloudflare tunnel run mi-turnoai
+# Copia la URL https de Cloudflare
 ```
 
-4. Configura el webhook en Twilio Console con la URL de ngrok
+4. Configura el webhook en Twilio Console con la URL de Cloudflare Tunnel
 
-### Eksponer Localmente con ngrok
+### Eksponer Localmente con Cloudflare Tunnel
 
 ```bash
-# Instalar ngrok
-# (descarga desde https://ngrok.com)
+# Instalar Cloudflare CLI
+# (descarga desde https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
 
 # Exponer puerto 8000
-ngrok http 8000
+cloudflare tunnel run mi-turnoai
 
 # Copia la URL y configúrala en Twilio
 ```
@@ -399,7 +399,7 @@ El agente es un **ReAct Agent** (Reasoning + Acting) basado en LangGraph:
 - [ ] `.env` configurado con todas las variables
 - [ ] MCP Server de Google Calendar ejecutándose
 - [ ] Credenciales de Twilio obtenidas
-- [ ] Webhook de Twilio configurado (o ngrok si es local)
+- [ ] Webhook de Twilio configurado (o Cloudflare Tunnel si es local)
 - [ ] OpenAI API Key agregada a `.env`
 - [ ] Aplicación ejecutada: `uvicorn main:app --reload`
 
@@ -424,7 +424,7 @@ pip install mcp
 ### Los mensajes de WhatsApp no se reciben
 
 - Verifica que el webhook en Twilio apunte a la URL correcta
-- Si usas ngrok, asegúrate de que esté ejecutándose
+- Si usas Cloudflare Tunnel, asegúrate de que esté ejecutándose
 - Revisa los logs de FastAPI para errores
 
 ## 📚 Recursos Adicionales

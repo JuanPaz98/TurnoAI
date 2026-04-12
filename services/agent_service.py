@@ -6,7 +6,13 @@ from langchain.tools import tool
 import os
 from dotenv import load_dotenv
 
-from services.calendar_service import actualizar_cita_en_calendario, buscar_citas_por_texto, cancelar_cita_en_calendario, crear_cita_en_calendario, listar_calendar_events
+from services.calendar_service import (
+    actualizar_cita_en_calendario,
+    buscar_citas_por_texto as service_search_by_text,
+    cancelar_cita_en_calendario,
+    crear_cita_en_calendario,
+    listar_calendar_events
+)
 from prompts.initial_prompt import SYSTEM_PROMPT
 
 load_dotenv()
@@ -47,18 +53,17 @@ async def crear_evento(titulo: str, fecha_inicio: str, fecha_fin: str):
 
 
 @tool
-async def buscar_eventos_por_texto_tool(query: str):
+async def buscar_citas_por_texto(query: str):
     """
     Busca eventos en Google Calendar usando texto o palabras clave.
 
     Args:
-        query: Texto para buscar en el calendario (ej: "barbería", "corte", "peluqueada", "manicure", "cita uñas")
+        query: Texto para buscar en el calendario (ej: "barbería", "corte", "peluqueada", "manicure", "cita uñas", "profe")
 
     Returns:
         Lista de eventos encontrados que coincidan con el texto.
     """
-
-    return await buscar_citas_por_texto(query)
+    return await service_search_by_text(query)
 
 
 @tool
@@ -101,7 +106,7 @@ async def cancelar_evento(event_id: str):
 
 async def load_mcp_tools():
     """Retorna las herramientas disponibles para el agente"""
-    return [buscar_disponibilidad, crear_evento, buscar_eventos_por_texto_tool, cancelar_evento, actualizar_evento]
+    return [buscar_disponibilidad, crear_evento, buscar_citas_por_texto, cancelar_evento, actualizar_evento]
 
 
 async def create_executer_agent():

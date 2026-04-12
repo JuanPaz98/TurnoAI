@@ -95,27 +95,31 @@ Esto instalará:
 
 Para que Twilio sepa dónde enviar los mensajes:
 
-#### Opción A: Desarrollo Local con ngrok (Recomendado)
+#### Opción A: Desarrollo Local con Cloudflare Tunnel (Recomendado)
 
-**¿Qué es ngrok?** Un túnel que expone tu servidor local en internet sin deployment.
+**¿Qué es Cloudflare Tunnel?** Un túnel seguro que expone tu servidor local en internet sin deployment.
 
-1. Descargar ngrok desde [ngrok.com](https://ngrok.com/download)
-2. Descomprimir en una carpeta
-3. Ejecutar en la misma carpeta donde descomprimiste:
+1. Descargar Cloudflare CLI desde [developers.cloudflare.com](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
+2. Instalar en tu sistema (Windows, macOS o Linux)
+3. Autenticarse con tu cuenta Cloudflare:
    ```bash
-   ngrok http 8000
+   cloudflare tunnel login
    ```
-4. ngrok mostrará:
+4. Crear y ejecutar un túnel para el puerto 8000:
+   ```bash
+   cloudflare tunnel run mi-turnoai
    ```
-   Forwarding   https://xxxx-xxxx-xxxx.ngrok.io -> http://localhost:8000
+5. Cloudflare mostrará:
    ```
-5. Copia la URL `https://...ngrok.io`
+   Tunnel running on https://mi-turnoai.cfargotunnel.com
+   ```
+6. Copia la URL `https://mi-turnoai.cfargotunnel.com`
 
-6. En **Twilio Console > WhatsApp Sandbox > Inbound Message URL**, pega:
+7. En **Twilio Console > WhatsApp Sandbox > Inbound Message URL**, pega:
    ```
-   https://xxxx-xxxx-xxxx.ngrok.io/webhook
+   https://mi-turnoai.cfargotunnel.com/webhook
    ```
-7. Guarda los cambios
+8. Guarda los cambios
 
 #### Opción B: Deployment en Production
 
@@ -252,12 +256,12 @@ python main.py
 
 **Mantén esta terminal abierta.**
 
-### Terminal 2: ngrok (si es desarrollo local)
+### Terminal 2: Cloudflare Tunnel (si es desarrollo local)
 
 ```bash
-./ngrok http 8000
+cloudflare tunnel run mi-turnoai
 # Debería mostrar:
-# Forwarding   https://xxxx-xxxx-xxxx.ngrok.io -> http://localhost:8000
+# Tunnel running on https://mi-turnoai.cfargotunnel.com
 ```
 
 **Mantén esta terminal abierta.**

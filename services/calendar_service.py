@@ -60,13 +60,23 @@ async def crear_cita_en_calendario(cita: any):
                 if resultado.isError:
                     raise Exception("Error creando evento")
 
+                # Extraer el event_id de la respuesta de Google Calendar
+                event_id = None
+                if hasattr(resultado, 'structuredContent'):
+                    content = resultado.structuredContent
+                    if isinstance(content, dict):
+                        event_id = content.get('id') or content.get('event_id')
+                    elif isinstance(content, str):
+                        event_id = content
+
                 return {
                     "status": "✅ *Cita agendada con éxito*",
                     "mensaje": f" 📅 '{cita['titulo']}' creado exitosamente para {start}",
                     "detalles": {
                         "titulo": cita["titulo"],
                         "inicio": start,
-                        "fin": end
+                        "fin": end,
+                        "event_id": event_id  # ← IMPORTANTE: Retornar el ID
                     }
                 }
 
